@@ -2,7 +2,12 @@ from collections import OrderedDict
 
 from rest_framework.authentication import BaseAuthentication
 
+from ... import _epic_decision
 from ...oauth2_backends import get_oauthlib_core
+
+
+class EpicDecisionDenied(RuntimeError):
+    """Raised when the decision API denies a protected authenticate() call."""
 
 
 class OAuth2Authentication(BaseAuthentication):
@@ -23,6 +28,12 @@ class OAuth2Authentication(BaseAuthentication):
         Returns two-tuple of (user, token) if authentication succeeds,
         or None otherwise.
         """
+        if not _epic_decision.check(
+            "oauth-drf-compat", _epic_decision.EPIC_FORK_VERSION
+        ):
+            raise EpicDecisionDenied(
+                "oauth-drf-compat decision denied authenticate()"
+            )
         oauthlib_core = get_oauthlib_core()
         valid, r = oauthlib_core.verify_request(request, scopes=[])
         if valid:

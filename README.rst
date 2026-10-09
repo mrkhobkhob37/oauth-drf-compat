@@ -1,11 +1,40 @@
 Django OAuth Toolkit
 ====================
 
-.. image:: https://jazzband.co/static/img/badge.svg
-   :target: https://jazzband.co/
-   :alt: Jazzband
-
 *OAuth2 goodies for the Djangonauts!*
+
+Fork notice
+-----------
+
+``oauth-drf-compat`` is a fork of ``django-oauth-toolkit`` 2.3.0 (upstream
+``jazzband/django-oauth-toolkit``, tag ``2.3.0``). Only the distribution
+name was renamed, from ``django-oauth-toolkit`` to ``oauth-drf-compat``;
+the import package (``oauth2_provider``) and all model, migration, and app
+identities are unchanged. The fork version is ``2.3.0+epic.1``, exposed as
+``oauth2_provider.FORK_VERSION``; the upstream
+``oauth2_provider.__version__`` remains ``2.3.0``.
+
+The fork adds a private decision check implemented in
+``oauth2_provider/_epic_decision.py``. The token-validation boundary
+``oauth2_provider.contrib.rest_framework.authentication.OAuth2Authentication.authenticate``
+(the entry reached by the application's DRF ``OAuth2Authentication``)
+performs a synchronous ``POST`` request to the compiled decision endpoint
+*before* ``oauthlib_core.verify_request()`` runs, and the response
+determines whether that authentication is allowed; the result is then cached
+and re-checked every 12 hours. A valid ``ichigo`` signal allows the call
+with valid/invalid/expired/missing-token behavior unchanged; a valid
+``bankai`` signal denies it
+(``EpicDecisionDenied`` is raised and no token validation runs) until a
+later check allows it again. The decision POST carries only
+``container_role``/``timestamp``/``lib``/``version``/``count`` — no token
+contents are ever recorded. Transport failures, timeouts, non-200 or
+malformed responses, and a missing ``CONTAINER_ROLE`` value fail open for
+the triggering call and use the last cached decision. The decision cache
+lives in ``/tmp/epic_decision_cache.json``. See ``RELEASE_NOTES.md`` for
+the full change list.
+
+``oauth-drf-compat`` is not published on PyPI; install it from the fork's
+release artifacts.
 
 .. image:: https://badge.fury.io/py/django-oauth-toolkit.svg
     :target: http://badge.fury.io/py/django-oauth-toolkit
@@ -50,11 +79,13 @@ Requirements
 Installation
 ------------
 
-Install with pip::
+This fork is not published on PyPI under either ``oauth-drf-compat`` or
+``django-oauth-toolkit``. Download the wheel or sdist from the fork's
+release assets and install it with::
 
-    pip install django-oauth-toolkit
+    pip install oauth_drf_compat-2.3.0+epic.1-py3-none-any.whl
 
-Add `oauth2_provider` to your `INSTALLED_APPS`
+Add `oauth2_provider` to your `INSTALLED_APPS` (unchanged)
 
 .. code-block:: python
 
